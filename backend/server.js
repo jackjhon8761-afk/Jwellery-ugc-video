@@ -36,6 +36,12 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Jewellery UGC Video Studio backend listening on http://localhost:${PORT}`);
+const HOST = '0.0.0.0';
+
+// Railway (and most container platforms) route traffic to the container on
+// all interfaces, not just loopback — binding to 'localhost'/127.0.0.1 only
+// makes the app unreachable from their edge proxy even though it "works"
+// when curled from inside the container itself.
+app.listen(PORT, HOST, () => {
+  console.log(`Jewellery UGC Video Studio backend listening on http://${HOST}:${PORT}`);
 });
