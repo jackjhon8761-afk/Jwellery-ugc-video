@@ -1,0 +1,16 @@
+# Single-service Railway build: install both workspaces, build the React
+# frontend into frontend/dist, then start the Express backend, which serves
+# that dist folder as static files (see backend/server.js).
+#
+# Requires the Railway service's Root Directory to be unset/"/" (repo root) —
+# if it's restricted to backend/, this file won't be picked up and the
+# frontend/ folder won't be in the build context. See README.md "Deploying
+# to Railway".
+[phases.install]
+cmds = ["npm install --prefix backend", "npm install --prefix frontend"]
+
+[phases.build]
+cmds = ["npm run build --prefix frontend"]
+
+[start]
+cmd = "npm start --prefix backend"

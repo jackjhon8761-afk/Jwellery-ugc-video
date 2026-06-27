@@ -163,7 +163,26 @@ public URL — run `ngrok http 5000` and set `PUBLIC_BASE_URL` in
 `backend/.env` to the `https://...ngrok-free.app` URL ngrok gives you, then
 restart the backend.
 
-## 6. How the flow works
+## 6. Deploying to Railway
+
+The backend serves the built frontend itself, so the whole app is one
+Railway service:
+
+1. In the service's **Settings → Source**, leave **Root Directory** unset
+   (i.e. the repo root, `/`) — not `backend/`. The repo ships a
+   `nixpacks.toml` at the root that installs both `backend/` and
+   `frontend/`, runs `npm run build --prefix frontend` (producing
+   `frontend/dist`), then starts the backend with `npm start --prefix
+   backend`. If Root Directory is restricted to `backend/`, Railway's build
+   won't see the sibling `frontend/` folder and `nixpacks.toml` is ignored.
+2. Add the same variables from `.env.example` under **Variables** (Railway
+   sets `PORT` automatically — leave it out). Set `PUBLIC_BASE_URL` to the
+   public Railway domain Railway gives the service.
+3. `backend/server.js` binds to `0.0.0.0` and serves `frontend/dist` as
+   static files with an SPA fallback, so visiting the service's root URL
+   shows the wizard.
+
+## 7. How the flow works
 
 1. **Image input** — upload a file (stored under `backend/uploads/` and
    served at `PUBLIC_BASE_URL/uploads/<file>`) or paste a public image URL
@@ -183,7 +202,7 @@ restart the backend.
    the chosen video + caption, polls until Instagram finishes processing it,
    then publishes it. "Download video" downloads the MP4 directly.
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
 - **"Video not ready" / stuck polling** — Creatify generation can take a few
   minutes per variation; the UI shows progress so this is expected. If it
@@ -194,8 +213,12 @@ restart the backend.
 - **Creatify can't fetch your uploaded image** — `PUBLIC_BASE_URL` is
   probably still `localhost`. It must be a URL reachable from the public
   internet (see the ngrok note above).
+- **"Cannot GET /" on the deployed URL** — the frontend wasn't built (or
+  isn't where the backend expects it, `frontend/dist`). On Railway, check
+  that **Root Directory** is unset so `nixpacks.toml` actually runs the
+  frontend build — see "Deploying to Railway" above.
 
-## 8. Security notes
+## 9. Security notes
 
 - All API keys live in `backend/.env`, which is git-ignored. They are read
   server-side only (`process.env.*`) and never sent to the browser.

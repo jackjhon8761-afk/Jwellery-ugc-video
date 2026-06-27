@@ -24,6 +24,15 @@ app.use('/api/instagram', instagramRouter);
 
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
 
+// Serve the built React app (frontend/dist) in production. Any GET request
+// that isn't an API route or a static asset falls through to index.html so
+// the wizard renders at "/" instead of Express's default "Cannot GET /".
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendDistPath));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
+});
+
 // Centralized error handler — catches multer errors, bad JSON bodies, and
 // anything thrown synchronously in a route, and always responds with the
 // friendly { error } shape the frontend expects.
