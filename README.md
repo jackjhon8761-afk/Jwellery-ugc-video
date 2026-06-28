@@ -166,21 +166,30 @@ restart the backend.
 ## 6. Deploying to Railway
 
 The backend serves the built frontend itself, so the whole app is one
-Railway service:
+Railway service.
 
-1. In the service's **Settings → Source**, leave **Root Directory** unset
-   (i.e. the repo root, `/`) — not `backend/`. The repo ships a
-   `nixpacks.toml` at the root that installs both `backend/` and
-   `frontend/`, runs `npm run build --prefix frontend` (producing
-   `frontend/dist`), then starts the backend with `npm start --prefix
-   backend`. If Root Directory is restricted to `backend/`, Railway's build
-   won't see the sibling `frontend/` folder and `nixpacks.toml` is ignored.
-2. Add the same variables from `.env.example` under **Variables** (Railway
-   sets `PORT` automatically — leave it out). Set `PUBLIC_BASE_URL` to the
-   public Railway domain Railway gives the service.
-3. `backend/server.js` binds to `0.0.0.0` and serves `frontend/dist` as
-   static files with an SPA fallback, so visiting the service's root URL
-   shows the wizard.
+1. **Settings → Source → Root Directory must be empty (repo root `/`),
+   not `backend/`.** This is the one setting that has to be right: Railway
+   only ever sees files inside Root Directory during the build, so if it's
+   scoped to `backend/`, the build can't reach the sibling `frontend/`
+   folder at all — no config file can work around that.
+2. The repo's `railway.json` (at the repo root) defines the build/deploy
+   commands as code, which Railway always uses in preference to whatever
+   is saved under Settings → Build / Settings → Deploy:
+   - **Build command:** `npm install --prefix backend && npm install --prefix frontend && npm run build --prefix frontend`
+   - **Start command:** `npm start --prefix backend`
+
+   That produces `frontend/dist`, which `backend/server.js` then serves as
+   static files (with an SPA fallback to `index.html`), so the service's
+   root URL shows the wizard. You don't need to set Build/Start Command in
+   the dashboard yourself — clear them or leave them, `railway.json` wins
+   either way.
+3. Add the variables from `.env.example` under **Variables** (Railway sets
+   `PORT` automatically — leave it out). Set `PUBLIC_BASE_URL` to the public
+   Railway domain the service gets.
+4. After confirming Root Directory, push/redeploy and check the build logs
+   for a `vite build` step actually running — that confirms the frontend
+   build executed, as opposed to a stale deploy.
 
 ## 7. How the flow works
 
@@ -215,8 +224,10 @@ Railway service:
   internet (see the ngrok note above).
 - **"Cannot GET /" on the deployed URL** — the frontend wasn't built (or
   isn't where the backend expects it, `frontend/dist`). On Railway, check
-  that **Root Directory** is unset so `nixpacks.toml` actually runs the
-  frontend build — see "Deploying to Railway" above.
+  that **Root Directory** is unset so `railway.json` can actually run the
+  frontend build — see "Deploying to Railway" above. Also check the latest
+  deployment's build logs for a `vite build` step; if it's missing, the
+  config file isn't being picked up.
 
 ## 9. Security notes
 
